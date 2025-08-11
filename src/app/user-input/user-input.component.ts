@@ -1,33 +1,43 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal,output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InvestmentInputModel, InvestmentInput } from '../investment-input.model';
+import { InvestmentService } from '../investment.service';
 
 @Component({
   selector: 'app-user-input',
-  imports: [FormsModule],
+  standalone: false,
   templateUrl: './user-input.component.html',
   styleUrls: ['./user-input.component.css']
 })
 
 export class UserInputComponent {
-  @Output() calculate = new EventEmitter<
-  { initialInvestment: number;
-     annualInvestment: number; expectedReturn: number; duration: number; 
-    }>();
-   initialInvestment: number = 0;
-  annualInvestment: number = 0;
-  expectedReturn: number = 5;
-  duration: number = 0;
+  calculate = output<InvestmentInput>();
+  initialInvestment = signal(0);
+  annualInvestment = signal(0);
+  expectedReturn = signal(5);
+  duration = signal(0);
+
+  constructor(private investmentService: InvestmentService) {}
+
+  inputModel: InvestmentInputModel = new InvestmentInputModel();
 
  
+  @Input() set investmentInput(value: InvestmentInput) {
+    if (value) {
+      this.initialInvestment.set(value.initialInvestment);
+      this.annualInvestment.set(value.annualInvestment);
+      this.expectedReturn.set(value.expectedReturn);
+      this.duration.set(value.duration);
+    }
+  }
 
-   onSubmit() {
-   const data = {
-      initialInvestment: this.initialInvestment,
-      annualInvestment: this.annualInvestment,
-      expectedReturn: this.expectedReturn,
-      duration: this.duration
-    };
-    this.calculate.emit(data);
-    console.log('Form submitted', data);
-   }
+  onSubmit() {
+    this.inputModel = new InvestmentInputModel(
+      this.initialInvestment(),
+      this.annualInvestment(),
+      this.expectedReturn(),
+      this.duration()
+    );
+    this.investmentService.calculateInvestmentResults(this.inputModel);
+  }
 }
